@@ -1806,6 +1806,23 @@ index 000000000..8dabaab2a
 +
 +MODULE_DESCRIPTION("DRM Driver for cwu50 MIPI DSI panel");
 +MODULE_LICENSE("GPL v2");
+diff --git a/drivers/mfd/axp20x-i2c.c b/drivers/mfd/axp20x-i2c.c
+index 791a0b4cb..bbce28f0d 100644
+--- a/drivers/mfd/axp20x-i2c.c
++++ b/drivers/mfd/axp20x-i2c.c
+@@ -46,6 +46,12 @@ static int axp20x_i2c_probe(struct i2c_client *i2c)
+ 		return ret;
+ 	}
+ 
++	regmap_update_bits(axp20x->regmap, AXP20X_VBUS_IPSOUT_MGMT, 0x03, 0x03);
++	regmap_update_bits(axp20x->regmap, AXP20X_OFF_CTRL, 0x08, 0x08);
++	regmap_update_bits(axp20x->regmap, AXP20X_CHRG_CTRL2, 0x30, 0x20);
++	regmap_update_bits(axp20x->regmap, AXP20X_PEK_KEY, 0x0f, 0x0b);
++	regmap_update_bits(axp20x->regmap, AXP20X_GPIO0_CTRL, 0x07, 0x00);
++
+ 	return axp20x_device_probe(axp20x);
+ }
+ 
 diff --git a/drivers/misc/ws2812-pio-rp1.c b/drivers/misc/ws2812-pio-rp1.c
 new file mode 100644
 index 000000000..ee840c6b3
@@ -2334,7 +2351,7 @@ index e5733cb9e..5be12e696 100644
  
  	return IRQ_HANDLED;
 diff --git a/drivers/power/supply/axp20x_battery.c b/drivers/power/supply/axp20x_battery.c
-index 88fbae613..8bb84efad 100644
+index 88fbae613..abbe765ee 100644
 --- a/drivers/power/supply/axp20x_battery.c
 +++ b/drivers/power/supply/axp20x_battery.c
 @@ -81,6 +81,10 @@
@@ -2371,8 +2388,8 @@ index 88fbae613..8bb84efad 100644
  		/* IIO framework gives mV but Power Supply framework gives uV */
  		val->intval *= 1000;
 +		axp20x_batt->voltage_now = val->intval;
- 		break;
- 
++		break;
++
 +	case POWER_SUPPLY_PROP_ENERGY_FULL:
 +	case POWER_SUPPLY_PROP_ENERGY_NOW:
 +	case POWER_SUPPLY_PROP_ENERGY_FULL_DESIGN:
@@ -2411,8 +2428,8 @@ index 88fbae613..8bb84efad 100644
 +			(val1 *
 +			((long long int)axp20x_batt->energy_full_design)) /
 +			100;
-+		break;
-+
+ 		break;
+ 
 +	case POWER_SUPPLY_PROP_CALIBRATE:
 +		// report both calibrate enable flag and calibration status
 +		ret = regmap_read(axp20x_batt->regmap, AXP20X_CC_CTRL, &reg);
@@ -2535,19 +2552,6 @@ index 88fbae613..8bb84efad 100644
  	}
  
  	/*
-@@ -1138,6 +1226,12 @@ static int axp20x_power_probe(struct platform_device *pdev)
- 	 */
- 	axp20x_get_constant_charge_current(axp20x_batt, &axp20x_batt->max_ccc);
- 
-+	regmap_update_bits(axp20x_batt->regmap, AXP20X_VBUS_IPSOUT_MGMT, 0x03, 0x03);
-+	regmap_update_bits(axp20x_batt->regmap, AXP20X_OFF_CTRL, 0x08, 0x08);
-+	regmap_update_bits(axp20x_batt->regmap, AXP20X_CHRG_CTRL2, 0x30, 0x20);
-+	regmap_update_bits(axp20x_batt->regmap, AXP20X_PEK_KEY, 0x0f, 0x0b);
-+	regmap_update_bits(axp20x_batt->regmap, AXP20X_GPIO0_CTRL, 0x07, 0x00);
-+
- 	return 0;
- }
- 
 diff --git a/drivers/video/backlight/Kconfig b/drivers/video/backlight/Kconfig
 index 3614a5d29..1c8f7cf38 100644
 --- a/drivers/video/backlight/Kconfig
